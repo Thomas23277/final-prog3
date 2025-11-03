@@ -4,10 +4,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
-import com.foodstore.htmeleros.entity.User;
-import com.foodstore.htmeleros.repository.UserRepository;
-import com.foodstore.htmeleros.util.Sha256Util;
+import com.foodstore.htmeleros.auth.entity.User;
+import com.foodstore.htmeleros.auth.repository.UserRepository;
+import com.foodstore.htmeleros.auth.util.Sha256Util;
 
 @SpringBootApplication
 public class HtmelerosApplication {
