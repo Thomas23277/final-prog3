@@ -5,7 +5,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import com.foodstore.htmeleros.auth.entity.User;
+<<<<<<< HEAD
 import com.foodstore.htmeleros.auth.repository.AuthUserRepository;
+=======
+import com.foodstore.htmeleros.auth.repository.UserRepository;
+>>>>>>> 221a344b61261b9c45cf27d9e8eb17ea09439bf8
 import com.foodstore.htmeleros.auth.util.Sha256Util;
 
 @SpringBootApplication
