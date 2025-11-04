@@ -1,71 +1,80 @@
-// =========================
-// 🔐 auth.ts — Manejo de autenticación local y remota
-// =========================
+import { apiPost } from './api';
 
-// --- LOGIN ---
-export async function login(email: string, password: string) {
+const LS_KEY = 'foodstore_user';
+
+export interface IUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  token?: string; // opcional, en caso de que el backend lo devuelva
+}
+
+/**
+ * Inicia sesión con email y contraseña.
+ * Guarda el usuario en localStorage si el login es exitoso.
+ */
+export async function login(email: string, password: string): Promise<IUser> {
   try {
-    const response = await fetch("http://localhost:8080/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    const payload = { email, password };
+    const res = await apiPost('/auth/login', payload);
 
-    if (!response.ok) {
-      throw new Error("Credenciales incorrectas");
-    }
+    // Normaliza la respuesta
+    const user = res?.user || res;
+    if (!user || !user.email) throw new Error('Credenciales incorrectas o respuesta inválida');
 
-    const userData = await response.json();
-
-    // ✅ Guarda el usuario actual en localStorage
-    localStorage.setItem("user", JSON.stringify(userData));
-
-    return userData;
-  } catch (error) {
-    console.error("❌ Error al iniciar sesión:", error);
-    throw error;
+    localStorage.setItem(LS_KEY, JSON.stringify(user));
+    return user as IUser;
+  } catch (err: any) {
+    throw new Error(err.message || 'Error al iniciar sesión');
   }
 }
 
-// --- REGISTER ---
-export async function register(name: string, email: string, password: string) {
+/**
+ * Registra un nuevo usuario.
+ * Guarda el usuario en localStorage si el registro es exitoso.
+ */
+export async function register(name: string, email: string, password: string): Promise<IUser> {
   try {
-    const response = await fetch("http://localhost:8080/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
+    const payload = { name, email, password };
+    const res = await apiPost('/auth/register', payload);
 
-    if (!response.ok) {
-      throw new Error("Error al registrarse");
-    }
+    const user = res?.user || res;
+    if (!user || !user.email) throw new Error('Error en el registro o respuesta inválida');
 
-    const userData = await response.json();
-
-    // ✅ Guarda el nuevo usuario también en localStorage
-    localStorage.setItem("user", JSON.stringify(userData));
-
-    return userData;
-  } catch (error) {
-    console.error("❌ Error en el registro:", error);
-    throw error;
+    localStorage.setItem(LS_KEY, JSON.stringify(user));
+    return user as IUser;
+  } catch (err: any) {
+    throw new Error(err.message || 'Error al registrar usuario');
   }
 }
 
-// --- LOGOUT ---
-export function logout() {
-  console.log("👋 Cerrando sesión y limpiando localStorage...");
-  localStorage.removeItem("user");
+/**
+ * Elimina los datos del usuario actual.
+ */
+export function logout(): void {
+  localStorage.removeItem(LS_KEY);
 }
 
-// --- OBTENER USUARIO ACTUAL ---
-export function getCurrentUser() {
+/**
+ * Obtiene el usuario guardado en localStorage, o null si no hay.
+ */
+export function getUser(): IUser | null {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return null;
   try {
-    const data = localStorage.getItem("user");
-    if (!data) return null;
-    return JSON.parse(data);
-  } catch (error) {
-    console.error("⚠️ Error al leer usuario de localStorage:", error);
+    return JSON.parse(raw) as IUser;
+  } catch {
     return null;
   }
 }
+
+/**
+ * Verifica si el usuario actual es administrador.
+ */
+export function isAdmin(): boolean {
+  const user = getUser();
+  return !!user && user.role?.toLowerCase() === 'admin';
+}
+
+export const getCurrentUser = getUser;

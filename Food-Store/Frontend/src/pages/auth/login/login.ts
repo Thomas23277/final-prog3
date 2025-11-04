@@ -1,35 +1,60 @@
-import { login } from "../../../utils/auth";
+// src/pages/auth/login/login.ts
+import { apiPost } from '../../../utils/api';
 
-const form = document.getElementById("loginForm") as HTMLFormElement;
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('login-form') as HTMLFormElement | null;
+  const msg = document.getElementById('msg') as HTMLElement | null;
 
-form?.addEventListener("submit", async (event) => {
-  event.preventDefault();
+  if (!form) return;
 
-  const email = (document.getElementById("email") as HTMLInputElement).value.trim();
-  const password = (document.getElementById("password") as HTMLInputElement).value.trim();
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg && (msg.textContent = '');
 
-  if (!email || !password) {
-    alert("⚠️ Por favor completá todos los campos.");
-    return;
-  }
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value.trim();
 
-  try {
-    // 🔹 Intentar iniciar sesión con el backend (usa tu auth.ts)
-    const user = await login(email, password);
-
-    // 🔹 Guardar sesión actual (ya lo hace login(), pero por si acaso)
-    localStorage.setItem("user", JSON.stringify(user));
-
-    alert("✅ Inicio de sesión exitoso");
-
-    // 🔹 Redirigir según el rol
-    if (user.role === "admin") {
-      window.location.href = "/src/pages/admin/adminHome/adminHome.html";
-    } else {
-      window.location.href = "/src/pages/store/home/home.html";
+    if (!email || !password) {
+      if (msg) {
+        msg.textContent = 'Completá email y contraseña';
+        msg.style.color = '#c0392b';
+      }
+      return;
     }
-  } catch (error) {
-    console.error("❌ Error en login:", error);
-    alert("Credenciales incorrectas o usuario no encontrado.");
-  }
+
+    try {
+      const res = await apiPost('/auth/login', { email, password });
+
+      // Estructura flexible (según backend)
+      const user = res.usuario || res.user || res;
+      if (!user || (!user.id && !user.email && !res.token)) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      const name = user.nombre || user.name || user.nombreCompleto || user.fullName || user.email;
+
+      // ✅ Guardamos con la clave 'usuario'
+      localStorage.setItem('usuario', JSON.stringify({
+        id: user.id || null,
+        nombre: name,
+        email: user.email || email,
+        token: res.token || null
+      }));
+
+      if (msg) {
+        msg.textContent = 'Inicio de sesión correcto. Redirigiendo...';
+        msg.style.color = '#27ae60';
+      }
+
+      setTimeout(() => {
+        window.location.href = '/src/pages/store/home/home.html';
+      }, 700);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (msg) {
+        msg.textContent = 'Error al iniciar sesión: ' + (err.message || 'Verifica tus credenciales');
+        msg.style.color = '#c0392b';
+      }
+    }
+  });
 });
